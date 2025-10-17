@@ -13,10 +13,7 @@ impl SearchEngine {
         let mut results = Vec::new();
 
         for entry in entries {
-            let search_text = format!("{} {}", 
-                entry.name,
-                entry.username.as_deref().unwrap_or("")
-            );
+            let search_text = entry.name.clone();
 
             if self.matches(&search_text, query) {
                 let score = self.calculate_score(&search_text, query);

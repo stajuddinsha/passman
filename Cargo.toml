@@ -1,14 +1,10 @@
 [package]
-name = "keytui-gui"
+name = "passman"
 version = "0.1.0"
 edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
-description = "Lightweight desktop password manager with Spotlight-style overlay interface"
+description = "Lightweight terminal password manager with atuin-style interface"
 license = "MIT"
-
-[[bin]]
-name = "keytui-gui"
-path = "src/main.rs"
 
 [[bin]]
 name = "keytui-tui"
@@ -19,10 +15,6 @@ name = "passman"
 path = "src/cli_main.rs"
 
 [dependencies]
-# GUI Framework (for GUI version)
-gtk4 = { version = "0.6", features = ["v4_6"], optional = true }
-glib = { version = "0.17", optional = true }
-gio = { version = "0.17", optional = true }
 
 # Terminal UI Framework
 ratatui = "0.24"
@@ -45,7 +37,3 @@ uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-
-[features]
-default = ["gui"]
-gui = ["gtk4", "glib", "gio"]

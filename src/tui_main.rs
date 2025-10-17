@@ -109,10 +109,7 @@ impl App {
             self.filtered_entries = self.entries
                 .iter()
                 .filter(|entry| {
-                    entry.name.to_lowercase().contains(&self.search_query.to_lowercase()) ||
-                    entry.username.as_ref().map_or(false, |u| u.to_lowercase().contains(&self.search_query.to_lowercase())) ||
-                    entry.url.as_ref().map_or(false, |u| u.to_lowercase().contains(&self.search_query.to_lowercase())) ||
-                    entry.tags.iter().any(|tag| tag.to_lowercase().contains(&self.search_query.to_lowercase()))
+                    entry.name.to_lowercase().contains(&self.search_query.to_lowercase())
                 })
                 .cloned()
                 .collect();
@@ -202,16 +199,17 @@ impl App {
             AppMode::Edit => {
                 if let Some((name, password)) = input.split_once('|') {
                     if let Some(entry) = self.filtered_entries.get_mut(self.selected_index) {
+                        let old_name = entry.name.clone();
                         entry.name = name.trim().to_string();
                         entry.password = password.trim().to_string();
-                        self.save_entries();
                         
                         // Update in main entries list
-                        if let Some(main_entry) = self.entries.iter_mut().find(|e| e.name == entry.name) {
+                        if let Some(main_entry) = self.entries.iter_mut().find(|e| e.name == old_name) {
                             main_entry.name = name.trim().to_string();
                             main_entry.password = password.trim().to_string();
                         }
                         
+                        self.save_entries();
                         self.mode = AppMode::Search;
                         self.status_message = "Entry updated successfully!".to_string();
                     }
@@ -301,7 +299,7 @@ fn restore_terminal<B: Backend>(terminal: &mut Terminal<B>) {
     // Force restore terminal state
     let _ = disable_raw_mode();
     let _ = execute!(
-        terminal.backend_mut(),
+        io::stdout(),
         LeaveAlternateScreen,
         DisableMouseCapture
     );
