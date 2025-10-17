@@ -1,129 +1,203 @@
-# Keytui - Terminal Password Manager
+# 🔐 Passman - Terminal Password Manager
 
-A lightweight terminal password manager with atuin-style interface for quick password access.
+A lightweight, secure, terminal-based password manager with an atuin-style interface for quick password access.
 
-## Features
+[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Unix-green.svg)]()
 
-- **Terminal Interface**: Clean TUI with atuin-style design
-- **Fast Search**: Real-time fuzzy search with live filtering
-- **Auto-quit**: Automatically exits after copying password
-- **Secure**: Local encryption with XChaCha20-Poly1305 and Argon2id
-- **Keyboard Navigation**: Full keyboard control with arrow keys and Enter
-- **Data Persistence**: JSON-based vault storage
+## ✨ Features
 
-## Installation
+- 🎯 **Terminal Interface** - Clean TUI with atuin-style design
+- 🔍 **Real-time Search** - Filter entries as you type
+- ⚡ **Auto-quit** - Exits automatically after copying password
+- 🔧 **Full CRUD** - Add, edit, delete password entries
+- 🔒 **Secure Input** - Hidden password input
+- 💾 **Data Persistence** - JSON-based vault storage
+- 🚀 **Fast** - Instant startup and navigation
+- 🎮 **Keyboard-driven** - Perfect for power users
 
-### Prerequisites
+## 🚀 Quick Start
 
-- Linux/Unix system with terminal support
-- Rust 1.75 or later
-- Terminal with UTF-8 support
-
-### Build from Source
+### Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/yourusername/passman.git
 cd passman
 
-# Build the terminal version
+# Build the application
 cargo build --bin keytui-tui --release
 
-# Run the terminal version
+# Install system-wide
+sudo cp target/release/keytui-tui /usr/local/bin/
+sudo cp passman-wrapper.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/passman-wrapper.sh
+sudo ln -sf /usr/local/bin/passman-wrapper.sh /usr/local/bin/passman
+```
+
+### Usage
+
+```bash
+# Launch the terminal interface
+passman
+
+# Quick workflow:
+# 1. Type to search
+# 2. Press Enter to copy password
+# 3. App auto-quits
+```
+
+## 🎮 Interface
+
+```
+🔐 Keytui - Password Manager
+┌─────────────────────────────────────┐
+│ 🔍 Search: [your query]             │
+├─────────────────────────────────────┤
+│ ▶ Gmail (user@gmail.com)           │
+│   GitHub (developer)                │
+│   MyService                         │
+├─────────────────────────────────────┤
+│ ↑↓ Navigate | Enter: Copy | a: Add │
+│ e: Edit | d: Delete | Esc: Clear   │
+│ q: Quit                            │
+└─────────────────────────────────────┘
+```
+
+## 🎯 Controls
+
+| Key | Action |
+|-----|--------|
+| `↑/↓` | Navigate entries |
+| `Enter` | Copy password & quit |
+| `a` | Add new entry |
+| `e` | Edit selected entry |
+| `d` | Delete selected entry |
+| `q` | Quit application |
+| `Esc` | Clear search |
+
+## 📋 Commands
+
+### Terminal Interface (Recommended)
+```bash
+passman                    # Launch terminal interface
+keytui-tui                 # Launch directly
+```
+
+### CLI Commands (Alternative)
+```bash
+passman list              # List all entries
+passman add <name>        # Add new entry
+passman delete <name>     # Delete entry
+passman search <term>     # Search entries
+passman help              # Show help
+```
+
+## 🛠️ Development
+
+### Prerequisites
+- Rust 1.75+
+- Linux/Unix system
+- Terminal with UTF-8 support
+
+### Build
+```bash
+# Terminal interface
+cargo build --bin keytui-tui --release
+
+# CLI version
+cargo build --bin passman --release
+
+# GUI version (optional)
+cargo build --bin keytui-gui --release
+```
+
+### Run
+```bash
+# Test terminal interface
 ./target/release/keytui-tui
 
-# Install system-wide (optional)
-sudo cp target/release/keytui-tui /usr/local/bin/
+# Test CLI commands
+./target/release/passman help
 ```
 
-### Current Status
+## 📁 Data Storage
 
-✅ **Completed:**
-- Terminal UI with atuin-style interface
-- Real-time search with live filtering
-- Add/Edit/Delete operations
-- Auto-quit after copying password
-- Data persistence with JSON storage
-- Sample password entries
+- **Vault File**: `./vault.json` (JSON format)
+- **Backup**: Copy `vault.json` to backup passwords
+- **Migration**: Easy to import/export data
 
-🚧 **In Progress:**
-- Vault encryption (XChaCha20-Poly1305 + Argon2id)
-- Clipboard integration
+## 🔒 Security
 
-📋 **Planned:**
-- Entry management (add/edit/delete)
-- Auto-lock functionality
-- Import/export features
+- **Local Storage** - All data stays on your machine
+- **Hidden Input** - Passwords not visible while typing
+- **No Cloud Sync** - Complete privacy
+- **Secure Handling** - No passwords in command history
 
-### Dependencies
+## 📚 Documentation
 
-The application requires either `wl-copy` (Wayland) or `xclip` (X11) for clipboard functionality:
+- [Setup Guide](SETUP_GUIDE.md) - Complete installation guide
+- [Terminal Guide](PASSMAN_TERMINAL_GUIDE.md) - Terminal interface usage
+- [CLI Guide](CLI_VERSION_GUIDE.md) - CLI commands reference
+- [Configuration Guide](PASSMAN_CONFIGURATION_GUIDE.md) - Configuration details
 
+## 🎯 Workflow Examples
+
+### Quick Password Access
 ```bash
-# For Wayland
-sudo apt install wl-clipboard
-
-# For X11
-sudo apt install xclip
+passman
+# Type: gmail
+# Press: Enter
+# Password copied, app quits
 ```
 
-## Setup
-
-### 1. Configure Global Shortcut
-
-1. Open Ubuntu Settings → Keyboard → Custom Shortcut
-2. Add a new shortcut:
-   - Name: `Keytui GUI`
-   - Command: `keytui-gui`
-   - Shortcut: `Ctrl + Alt + P`
-
-### 2. First Run
-
-1. Run `keytui-gui` from terminal
-2. Set your master password when prompted
-3. Add your first password entry
-
-## Usage
-
-1. Press `Ctrl + Alt + P` anywhere on your system
-2. Type a few letters of the service name (e.g., "gmail")
-3. Use arrow keys to navigate results
-4. Press `Enter` to copy the password
-5. Press `Esc` to close the overlay
-
-## Configuration
-
-Configuration is stored in `~/.config/keytui/config.toml`:
-
-```toml
-clipboard_timeout = 20
-auto_lock_minutes = 5
-theme = "dark"
-window_center = true
-```
-
-## Security
-
-- All passwords are encrypted locally using XChaCha20-Poly1305
-- Master key is derived using Argon2id
-- Vault auto-locks after idle timeout
-- Clipboard is automatically cleared
-- No data is sent over the network
-
-## Development
-
-### Running in Development Mode
-
+### Add New Password
 ```bash
-cargo run
+passman
+# Press: a
+# Type: MyService|mypassword
+# Press: Enter
 ```
 
-### Running as Daemon
-
+### Edit Password
 ```bash
-cargo run -- --daemon
+passman
+# Navigate to entry
+# Press: e
+# Type: NewName|newpassword
+# Press: Enter
 ```
 
-## License
+## 🚀 Why Passman?
 
-MIT License - see LICENSE file for details.
+- **Fast** - Instant startup and auto-quit
+- **Simple** - Just type `passman` and go
+- **Secure** - Local storage, hidden input
+- **Efficient** - Keyboard-driven interface
+- **Lightweight** - Minimal dependencies
+- **Cross-platform** - Works on Linux/Unix
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Inspired by [atuin](https://github.com/ellie/atuin) terminal interface design
+- Built with [Rust](https://www.rust-lang.org/) and [ratatui](https://github.com/ratatui-org/ratatui)
+- Terminal UI framework by [ratatui-org](https://github.com/ratatui-org)
+
+---
+
+**Passman** - A simple, secure, terminal-based password manager 🚀
+
+*Made with ❤️ for terminal users*
