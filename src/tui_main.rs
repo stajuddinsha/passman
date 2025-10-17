@@ -70,12 +70,41 @@ impl App {
     }
 
     fn load_entries(&mut self) -> Result<()> {
-        let config = config::Config::load()?;
-        let vault_manager = VaultManager::new(&config)?;
-        
-        // Get all entries from vault
-        self.entries = vault_manager.get_all_entries()?;
+        // Load entries from vault.json file
+        if std::path::Path::new("vault.json").exists() {
+            let vault_content = std::fs::read_to_string("vault.json")?;
+            
+            // Try to parse as array first (new format)
+            if let Ok(entries) = serde_json::from_str::<Vec<PasswordEntry>>(&vault_content) {
+                self.entries = entries;
+                println!("[TUI] Loaded {} entries from vault.json (array format)", self.entries.len());
+            } else {
+                // Try to parse as map (old format) and convert to array
+                if let Ok(entries_map) = serde_json::from_str::<std::collections::HashMap<String, PasswordEntry>>(&vault_content) {
+                    self.entries = entries_map.into_values().collect();
+                    println!("[TUI] Loaded {} entries from vault.json (map format)", self.entries.len());
+                } else {
+                    println!("[TUI] Could not parse vault.json, starting with empty vault");
+                    self.entries = Vec::new();
+                }
+            }
+        } else {
+            // Create empty vault if it doesn't exist
+            self.entries = Vec::new();
+            println!("[TUI] No vault.json found, starting with empty vault");
+        }
         Ok(())
+    }
+
+    fn save_entries(&self) {
+        // Save entries to vault.json file
+        if let Ok(entries_json) = serde_json::to_string_pretty(&self.entries) {
+            if let Err(e) = std::fs::write("vault.json", entries_json) {
+                eprintln!("Error saving entries: {}", e);
+            } else {
+                println!("[TUI] Saved {} entries to vault.json", self.entries.len());
+            }
+        }
     }
 
     fn filter_entries(&mut self) {
@@ -173,6 +202,7 @@ impl App {
                         updated_at: chrono::Utc::now(),
                     };
                     self.entries.push(entry);
+                    self.save_entries();
                     self.filter_entries();
                     self.mode = AppMode::Search;
                     self.status_message = "Entry added successfully!".to_string();
@@ -186,6 +216,7 @@ impl App {
                         entry.name = name.trim().to_string();
                         entry.password = password.trim().to_string();
                         entry.updated_at = chrono::Utc::now();
+                        self.save_entries();
                         
                         // Update in main entries list
                         if let Some(main_entry) = self.entries.iter_mut().find(|e| e.id == entry.id) {
@@ -206,6 +237,7 @@ impl App {
                     "y" | "yes" => {
                         if let Some(entry_id) = self.get_selected_entry().map(|e| e.id.clone()) {
                             self.entries.retain(|e| e.id != entry_id);
+                            self.save_entries();
                             self.filter_entries();
                             self.mode = AppMode::Search;
                             self.status_message = "Entry deleted successfully!".to_string();
