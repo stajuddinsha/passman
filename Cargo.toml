@@ -1,0 +1,25 @@
+[package]
+name = "keytui-gui"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "Lightweight desktop password manager with Spotlight-style overlay interface"
+license = "MIT"
+
+[dependencies]
+# GUI Framework
+gtk4 = { version = "0.6", features = ["v4_6"] }
+glib = "0.17"
+gio = "0.17"
+
+# Error Handling
+anyhow = "1.0"
+
+# Configuration
+dirs = "5.0"
+toml = "0.7"
+
+# Additional dependencies
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
