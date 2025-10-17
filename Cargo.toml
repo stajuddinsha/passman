@@ -14,6 +14,10 @@ path = "src/main.rs"
 name = "keytui-tui"
 path = "src/tui_main.rs"
 
+[[bin]]
+name = "passman"
+path = "src/cli_main.rs"
+
 [dependencies]
 # GUI Framework (for GUI version)
 gtk4 = { version = "0.6", features = ["v4_6"], optional = true }
@@ -24,6 +28,9 @@ gio = { version = "0.17", optional = true }
 ratatui = "0.24"
 crossterm = "0.27"
 tokio = { version = "1.0", features = ["full"] }
+
+# CLI dependencies
+rpassword = "7.0"
 
 # Error Handling
 anyhow = "1.0"

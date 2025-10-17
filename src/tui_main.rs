@@ -239,17 +239,17 @@ fn main() -> Result<()> {
     let mut app = App::new()?;
     let res = run_app(&mut terminal, &mut app);
 
-    // Restore terminal
-    disable_raw_mode()?;
-    execute!(
+    // Always restore terminal, even on panic
+    let _ = disable_raw_mode();
+    let _ = execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
+    );
+    let _ = terminal.show_cursor();
 
     if let Err(err) = res {
-        println!("{err:?}");
+        eprintln!("{err:?}");
     }
 
     Ok(())
@@ -268,6 +268,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 app.should_quit = true;
                                 return Ok(());
                             }
+                            KeyCode::Char('a') => app.add_entry(),
+                            KeyCode::Char('e') => app.edit_entry(),
+                            KeyCode::Char('d') => app.delete_entry(),
                             KeyCode::Char(c) => {
                                 app.search_query.push(c);
                                 app.filter_entries();
@@ -279,9 +282,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             KeyCode::Down => app.next_entry(),
                             KeyCode::Up => app.previous_entry(),
                             KeyCode::Enter => app.copy_password(),
-                            KeyCode::Char('a') => app.add_entry(),
-                            KeyCode::Char('e') => app.edit_entry(),
-                            KeyCode::Char('d') => app.delete_entry(),
                             KeyCode::Esc => {
                                 app.search_query.clear();
                                 app.filter_entries();

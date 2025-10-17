@@ -182,7 +182,7 @@ impl VaultManager {
         Ok(())
     }
 
-    fn save_entries(&self) -> Result<()> {
+    pub fn save_entries(&self) -> Result<()> {
         // Simple file-based persistence for now
         let vault_file = std::path::Path::new("vault.json");
         let entries_json = serde_json::to_string_pretty(&self.entries)?;
