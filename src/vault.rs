@@ -5,14 +5,8 @@ use crate::config::Config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PasswordEntry {
-    pub id: String,
     pub name: String,
-    pub username: Option<String>,
     pub password: String,
-    pub url: Option<String>,
-    pub tags: Vec<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 pub struct VaultManager {

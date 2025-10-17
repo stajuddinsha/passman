@@ -15,6 +15,7 @@ use ratatui::{
 use std::{
     io,
     time::{Duration, Instant},
+    sync::atomic::{AtomicBool, Ordering},
 };
 
 mod config;
@@ -22,7 +23,7 @@ mod vault;
 mod clipboard;
 mod search;
 
-use vault::{VaultManager, PasswordEntry};
+use vault::PasswordEntry;
 
 #[derive(Clone)]
 pub struct App {
@@ -74,19 +75,13 @@ impl App {
         if std::path::Path::new("vault.json").exists() {
             let vault_content = std::fs::read_to_string("vault.json")?;
             
-            // Try to parse as array first (new format)
+            // Parse as array format (new simplified format)
             if let Ok(entries) = serde_json::from_str::<Vec<PasswordEntry>>(&vault_content) {
                 self.entries = entries;
-                println!("[TUI] Loaded {} entries from vault.json (array format)", self.entries.len());
+                println!("[TUI] Loaded {} entries from vault.json", self.entries.len());
             } else {
-                // Try to parse as map (old format) and convert to array
-                if let Ok(entries_map) = serde_json::from_str::<std::collections::HashMap<String, PasswordEntry>>(&vault_content) {
-                    self.entries = entries_map.into_values().collect();
-                    println!("[TUI] Loaded {} entries from vault.json (map format)", self.entries.len());
-                } else {
-                    println!("[TUI] Could not parse vault.json, starting with empty vault");
-                    self.entries = Vec::new();
-                }
+                println!("[TUI] Could not parse vault.json, starting with empty vault");
+                self.entries = Vec::new();
             }
         } else {
             // Create empty vault if it doesn't exist
@@ -181,7 +176,7 @@ impl App {
     }
 
     fn delete_entry(&mut self) {
-        if let Some(entry_id) = self.get_selected_entry().map(|e| e.id.clone()) {
+        if let Some(entry_name) = self.get_selected_entry().map(|e| e.name.clone()) {
             self.mode = AppMode::Delete;
             self.status_message = "Delete mode: Press 'y' to confirm, 'n' to cancel".to_string();
         }
@@ -192,14 +187,8 @@ impl App {
             AppMode::Add => {
                 if let Some((name, password)) = input.split_once('|') {
                     let entry = PasswordEntry {
-                        id: uuid::Uuid::new_v4().to_string(),
                         name: name.trim().to_string(),
-                        username: None,
                         password: password.trim().to_string(),
-                        url: None,
-                        tags: vec![],
-                        created_at: chrono::Utc::now(),
-                        updated_at: chrono::Utc::now(),
                     };
                     self.entries.push(entry);
                     self.save_entries();
@@ -215,14 +204,12 @@ impl App {
                     if let Some(entry) = self.filtered_entries.get_mut(self.selected_index) {
                         entry.name = name.trim().to_string();
                         entry.password = password.trim().to_string();
-                        entry.updated_at = chrono::Utc::now();
                         self.save_entries();
                         
                         // Update in main entries list
-                        if let Some(main_entry) = self.entries.iter_mut().find(|e| e.id == entry.id) {
+                        if let Some(main_entry) = self.entries.iter_mut().find(|e| e.name == entry.name) {
                             main_entry.name = name.trim().to_string();
                             main_entry.password = password.trim().to_string();
-                            main_entry.updated_at = chrono::Utc::now();
                         }
                         
                         self.mode = AppMode::Search;
@@ -235,8 +222,8 @@ impl App {
             AppMode::Delete => {
                 match input.to_lowercase().as_str() {
                     "y" | "yes" => {
-                        if let Some(entry_id) = self.get_selected_entry().map(|e| e.id.clone()) {
-                            self.entries.retain(|e| e.id != entry_id);
+                        if let Some(entry_name) = self.get_selected_entry().map(|e| e.name.clone()) {
+                            self.entries.retain(|e| e.name != entry_name);
                             self.save_entries();
                             self.filter_entries();
                             self.mode = AppMode::Search;
@@ -260,7 +247,36 @@ impl App {
 }
 
 fn main() -> Result<()> {
-    // Setup terminal
+    // Setup panic handler to restore terminal
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        // Force restore terminal on panic
+        let _ = disable_raw_mode();
+        let _ = execute!(
+            io::stdout(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        );
+        original_hook(panic_info);
+    }));
+
+    // Setup signal handler for Ctrl+C
+    let running = std::sync::Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+        // Force restore terminal on interrupt
+        let _ = disable_raw_mode();
+        let _ = execute!(
+            io::stdout(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        );
+        std::process::exit(0);
+    })?;
+
+    // Setup terminal with cleanup guard
+    let _guard = TerminalGuard;
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -272,6 +288,17 @@ fn main() -> Result<()> {
     let res = run_app(&mut terminal, &mut app);
 
     // Always restore terminal, even on panic
+    restore_terminal(&mut terminal);
+
+    if let Err(err) = res {
+        eprintln!("{err:?}");
+    }
+
+    Ok(())
+}
+
+fn restore_terminal<B: Backend>(terminal: &mut Terminal<B>) {
+    // Force restore terminal state
     let _ = disable_raw_mode();
     let _ = execute!(
         terminal.backend_mut(),
@@ -279,12 +306,25 @@ fn main() -> Result<()> {
         DisableMouseCapture
     );
     let _ = terminal.show_cursor();
+    
+    // Additional cleanup
+    let _ = terminal.clear();
+    let _ = terminal.flush();
+}
 
-    if let Err(err) = res {
-        eprintln!("{err:?}");
+// Terminal cleanup guard
+struct TerminalGuard;
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        // Force restore terminal state on drop
+        let _ = disable_raw_mode();
+        let _ = execute!(
+            io::stdout(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        );
     }
-
-    Ok(())
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
@@ -434,22 +474,11 @@ fn ui(f: &mut Frame, app: &App) {
                 Style::default()
             };
 
-            let username = entry.username.as_ref().map(|u| format!(" ({})", u)).unwrap_or_default();
-            let url = entry.url.as_ref().map(|u| format!(" - {}", u)).unwrap_or_default();
-            let tags = if !entry.tags.is_empty() {
-                format!(" [{}]", entry.tags.join(", "))
-            } else {
-                String::new()
-            };
-
             ListItem::new(Line::from(vec![
                 Span::styled(
                     format!("{}", entry.name),
                     style.fg(Color::Cyan),
                 ),
-                Span::styled(username, style.fg(Color::Gray)),
-                Span::styled(url, style.fg(Color::Blue)),
-                Span::styled(tags, style.fg(Color::Magenta)),
             ]))
         })
         .collect();
