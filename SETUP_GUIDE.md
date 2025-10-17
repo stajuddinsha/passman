@@ -1,45 +1,33 @@
-# Passman Setup Guide
+# Passman - Terminal Password Manager Setup Guide
 
-## 🚀 **Complete Setup Guide for Passman Terminal Interface**
+A lightweight, secure terminal-based password manager with an atuin-style interface for Ubuntu/Linux systems.
 
-This guide will help you set up Passman, a lightweight terminal password manager with an atuin-style interface.
+## Features
 
-### 📋 **What is Passman?**
+- 🔐 **Secure Storage**: Passwords stored in `~/.passman/vault.json`
+- 🎯 **Instant Search**: Type to filter passwords instantly
+- 📋 **Clipboard Integration**: Auto-copy passwords to clipboard
+- ⌨️ **Keyboard Shortcuts**: Full keyboard navigation
+- 🚀 **Fast Access**: Launch with `passman` command
+- 🔒 **Privacy**: No cloud dependencies, local storage only
 
-Passman is a terminal-based password manager that provides:
-- **Terminal TUI interface** with atuin-style design
-- **Real-time search** and filtering
-- **Add/Edit/Delete** operations
-- **Auto-quit** after copying passwords
-- **Secure password input**
-- **JSON-based data persistence**
+## Prerequisites
 
-### 🎯 **Features**
+- Ubuntu 20.04+ or compatible Linux distribution
+- Rust compiler (cargo)
+- Git
 
-- ✅ **Terminal Interface** - Clean TUI with keyboard navigation
-- ✅ **Real-time Search** - Filter entries as you type
-- ✅ **Auto-quit** - Exits automatically after copying password
-- ✅ **Full CRUD** - Add, edit, delete password entries
-- ✅ **Secure Input** - Hidden password input
-- ✅ **Data Persistence** - JSON-based vault storage
-- ✅ **Cross-platform** - Works on Linux/Unix systems
+## Installation
 
-### 🔧 **Prerequisites**
+### 1. Clone the Repository
 
-- **Linux/Unix system** with terminal support
-- **Rust 1.75+** (for building)
-- **Terminal with UTF-8 support**
-- **Basic terminal knowledge**
-
-### 📦 **Installation**
-
-#### **Step 1: Clone the Repository**
 ```bash
 git clone https://github.com/yourusername/passman.git
 cd passman
 ```
 
-#### **Step 2: Install Dependencies (Ubuntu/Debian)**
+### 2. Install Dependencies
+
 ```bash
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -47,237 +35,238 @@ source ~/.cargo/env
 
 # Install system dependencies
 sudo apt update
-sudo apt install build-essential pkg-config
+sudo apt install -y build-essential pkg-config libssl-dev
+
+# Install clipboard tools (choose one)
+sudo apt install -y xclip        # For X11 systems
+# OR
+sudo apt install -y wl-clipboard # For Wayland systems
 ```
 
-#### **Step 3: Build the Application**
+### 3. Build the Application
+
 ```bash
-# Build the terminal version
+# Build the TUI version
 cargo build --bin keytui-tui --release
 
 # Build the CLI version (optional)
 cargo build --bin passman --release
 ```
 
-#### **Step 4: Install System-wide**
+### 4. Install System-wide
+
 ```bash
-# Install the terminal interface
-sudo cp target/release/keytui-tui /usr/local/bin/
+# Create wrapper script
+cat > passman-wrapper.sh << 'EOF'
+#!/bin/bash
+# Passman wrapper script - launches the TUI interface
+exec "/home/$(whoami)/workspace/cortex/projects/passman/target/release/keytui-tui"
+EOF
 
-# Install the CLI version
-sudo cp target/release/passman /usr/local/bin/
+chmod +x passman-wrapper.sh
 
-# Create wrapper script for passman command
-sudo cp passman-wrapper.sh /usr/local/bin/passman-wrapper.sh
-sudo chmod +x /usr/local/bin/passman-wrapper.sh
-sudo ln -sf /usr/local/bin/passman-wrapper.sh /usr/local/bin/passman
+# Install system-wide
+sudo cp passman-wrapper.sh /usr/local/bin/passman
+sudo chmod +x /usr/local/bin/passman
+
+# Create symlink in user bin (for PATH priority)
+mkdir -p ~/.local/bin
+ln -sf /usr/local/bin/passman ~/.local/bin/passman
 ```
 
-### 🚀 **Usage**
+### 5. Verify Installation
 
-#### **Terminal Interface (Recommended)**
 ```bash
-# Launch the terminal interface
+# Test the installation
+passman --help  # Should show help or launch TUI
+which passman   # Should show /home/username/.local/bin/passman
+```
+
+## Usage
+
+### Launch the TUI Interface
+
+```bash
 passman
-
-# Or launch directly
-keytui-tui
 ```
 
-#### **CLI Commands (Alternative)**
+### TUI Controls
+
+| Key | Action |
+|-----|--------|
+| `↑/↓` | Navigate entries |
+| `Enter` | Copy password to clipboard |
+| `a` | Add new entry |
+| `e` | Edit selected entry |
+| `d` | Delete selected entry |
+| `q` | Quit |
+| `Esc` | Clear search |
+
+### Adding Passwords
+
+1. Launch `passman`
+2. Press `a` to add mode
+3. Type: `name|password` (e.g., `gmail|mypassword123`)
+4. Press `Enter` to save
+
+### Searching Passwords
+
+1. Launch `passman`
+2. Start typing to filter entries
+3. Use `↑/↓` to navigate results
+4. Press `Enter` to copy password
+
+### CLI Commands (Alternative)
+
 ```bash
-# List all entries
+# Add password
+passman add gmail
+# (will prompt for password)
+
+# List all passwords
 passman list
 
-# Add new entry
-passman add gmail
-
-# Delete entry
+# Delete password
 passman delete gmail
-
-# Search entries
-passman search gmail
-
-# Show help
-passman help
 ```
 
-### 🎮 **Terminal Interface Controls**
+## Data Storage
 
-#### **Navigation**
-- **↑/↓ Arrow Keys** - Navigate through entries
-- **Enter** - Copy password and auto-quit
-- **Esc** - Clear search / Cancel operation
-- **q** - Quit application
+- **Location**: `~/.passman/vault.json`
+- **Format**: JSON array of password entries
+- **Security**: Plain text (encryption planned for future versions)
 
-#### **Search Mode (Default)**
-- **Type** - Search entries in real-time
-- **a** - Add new entry
-- **e** - Edit selected entry
-- **d** - Delete selected entry
-
-#### **Add/Edit Mode**
-- **Format**: `name|password` (e.g., `Gmail|mypassword123`)
-- **Enter** - Save entry
-- **Esc** - Cancel operation
-
-#### **Delete Mode**
-- **y** - Confirm deletion
-- **n** - Cancel deletion
-- **Esc** - Cancel operation
-
-### 🎨 **Interface Layout**
-
-```
-🔐 Keytui - Password Manager
-┌─────────────────────────────────────┐
-│ 🔍 Search: [your query]             │
-├─────────────────────────────────────┤
-│ ▶ Gmail (user@gmail.com)           │
-│   GitHub (developer)                │
-│   MyService                         │
-├─────────────────────────────────────┤
-│ ↑↓ Navigate | Enter: Copy | a: Add │
-│ e: Edit | d: Delete | Esc: Clear   │
-│ q: Quit                            │
-└─────────────────────────────────────┘
-```
-
-### 🧪 **Quick Start**
-
-#### **Step 1: Launch the Interface**
-```bash
-passman
-```
-
-#### **Step 2: Add Your First Entry**
-1. **Press `a`** to add new entry
-2. **Type**: `Gmail|mypassword123`
-3. **Press Enter** to save
-
-#### **Step 3: Search and Copy**
-1. **Type "gmail"** to search
-2. **Press Enter** to copy password
-3. **Application auto-quits**
-
-### 📁 **Data Storage**
-
-#### **Vault File**
-- **Location**: `./vault.json` (in current directory)
-- **Format**: JSON with encrypted passwords
-- **Backup**: Copy `vault.json` to backup your passwords
-
-#### **Sample Vault Structure**
+### Example vault.json:
 ```json
-{
-  "entry_id_1": {
-    "id": "entry_id_1",
-    "name": "Gmail",
-    "username": "user@gmail.com",
-    "password": "encrypted_password",
-    "url": "https://gmail.com",
-    "tags": ["email", "google"],
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+[
+  {
+    "name": "gmail",
+    "password": "mypassword123"
+  },
+  {
+    "name": "github",
+    "password": "anotherpassword"
   }
-}
+]
 ```
 
-### 🔒 **Security Features**
+## Troubleshooting
 
-#### **Password Input**
-- **Hidden input** - No characters visible while typing
-- **Secure handling** - No password in command history
-- **Auto-quit** - Prevents leaving interface open
+### Clipboard Not Working
 
-#### **Data Protection**
-- **Local storage** - All data stays on your machine
-- **JSON format** - Easy to backup and migrate
-- **No cloud sync** - Complete privacy
-
-### 🛠️ **Development**
-
-#### **Build All Versions**
 ```bash
-# Terminal interface
+# Test clipboard functionality
+echo "test" | xclip -selection clipboard
+xclip -selection clipboard -o  # Should show "test"
+
+# For Wayland systems
+echo "test" | wl-copy
+wl-paste  # Should show "test"
+```
+
+### Terminal Corruption After Exit
+
+If your terminal gets corrupted after using passman:
+
+```bash
+# Reset terminal
+reset
+# OR
+stty sane
+```
+
+### Build Issues
+
+```bash
+# Clean and rebuild
+cargo clean
 cargo build --bin keytui-tui --release
 
-# CLI version
-cargo build --bin passman --release
-
-# GUI version (optional)
-cargo build --bin keytui-gui --release
+# If Rust issues, update toolchain
+rustup update
 ```
 
-#### **Run Tests**
+### Permission Issues
+
 ```bash
-# Test terminal interface
-./target/release/keytui-tui
-
-# Test CLI commands
-./target/release/passman help
-./target/release/passman list
+# Fix permissions
+chmod +x target/release/keytui-tui
+chmod +x passman-wrapper.sh
 ```
 
-### 📚 **Documentation**
+## Development
 
-#### **Available Guides**
-- `PASSMAN_TERMINAL_GUIDE.md` - Terminal interface usage
-- `PASSMAN_CONFIGURATION_GUIDE.md` - Configuration details
-- `CLI_VERSION_GUIDE.md` - CLI commands reference
-- `TERMINAL_VERSION_GUIDE.md` - Terminal interface features
+### Project Structure
 
-#### **Troubleshooting**
-- **Terminal corruption**: Use CLI version instead
-- **Build errors**: Check Rust version and dependencies
-- **Permission errors**: Use `sudo` for system-wide installation
+```
+passman/
+├── src/
+│   ├── tui_main.rs      # Terminal UI interface
+│   ├── cli_main.rs      # Command-line interface
+│   ├── vault.rs         # Data structures
+│   ├── clipboard.rs     # Clipboard operations
+│   └── search.rs        # Search functionality
+├── Cargo.toml           # Dependencies
+└── README.md           # Project documentation
+```
 
-### 🎯 **Workflow Examples**
+### Building
 
-#### **Daily Password Access**
 ```bash
-# Quick access
-passman
-# Type: gmail
-# Press: Enter
-# Password copied, app quits
+# Development build
+cargo build
+
+# Release build
+cargo build --release
+
+# Run specific binary
+cargo run --bin keytui-tui
+cargo run --bin passman
 ```
 
-#### **Password Management**
+### Testing
+
 ```bash
-# Add new password
-passman
-# Press: a
-# Type: MyService|mypassword
-# Press: Enter
+# Test clipboard
+./test_clipboard_direct.sh
 
-# Edit existing password
-passman
-# Navigate to entry
-# Press: e
-# Type: NewName|newpassword
-# Press: Enter
+# Test TUI
+./test_clipboard.sh
 ```
 
-### 🎉 **Ready to Use!**
+## Security Notes
 
-Passman is now installed and ready to use:
+⚠️ **Current Version**: Passwords are stored in plain text JSON format.
 
-- ✅ **`passman` command** launches terminal interface
-- ✅ **All navigation** works with keyboard
-- ✅ **Auto-quit** after copying passwords
-- ✅ **Full CRUD** operations available
-- ✅ **Secure password** input
-- ✅ **Data persistence** working
+🔒 **Future Plans**: 
+- XChaCha20-Poly1305 encryption
+- Argon2id key derivation
+- Auto-lock functionality
+- Secure clipboard clearing
 
-**Start using it**: Type `passman` to open the password manager! 🎯
+## Contributing
 
-### 📞 **Support**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-- **Issues**: Report on GitHub Issues
-- **Documentation**: Check the guides in the repository
-- **Contributing**: Fork and submit pull requests
+## License
+
+MIT License - see LICENSE file for details.
+
+## Support
+
+- **Issues**: Report bugs on GitHub Issues
+- **Features**: Request features on GitHub Discussions
+- **Documentation**: Check the README.md for more details
 
 ---
 
-**Passman** - A simple, secure, terminal-based password manager 🚀
+**Quick Start Summary:**
+1. `git clone` → `cargo build --release` → `sudo cp passman-wrapper.sh /usr/local/bin/passman`
+2. Run `passman` to launch the TUI
+3. Press `a` to add passwords, type to search, `Enter` to copy
+
+Enjoy your secure, fast password management! 🚀

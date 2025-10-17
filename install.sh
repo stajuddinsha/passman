@@ -1,83 +1,154 @@
 #!/bin/bash
 
-# Keytui GUI Installation Script
+# Passman Installation Script
+# Installs the terminal password manager system-wide
 
 set -e
 
-echo "🚀 Installing Keytui GUI..."
+echo "🔐 Passman - Terminal Password Manager Installer"
+echo "================================================"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
 # Check if running as root
-if [ "$EUID" -eq 0 ]; then
-    echo "❌ Please don't run this script as root. It will use sudo when needed."
-    exit 1
+if [[ $EUID -eq 0 ]]; then
+   print_error "This script should not be run as root"
+   exit 1
 fi
 
-# Check if release binary exists
-if [ ! -f "target/release/keytui-gui" ]; then
-    echo "❌ Release binary not found. Building first..."
-    ./build.sh
-    if [ $? -ne 0 ]; then
-        echo "❌ Build failed!"
-        exit 1
-    fi
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
+
+print_status "Installing Passman from: $PROJECT_DIR"
+
+# Check if Rust is installed
+if ! command -v cargo &> /dev/null; then
+    print_warning "Rust not found. Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source ~/.cargo/env
+    print_success "Rust installed successfully"
+else
+    print_success "Rust is already installed"
 fi
 
-# Install clipboard dependencies
-echo "📦 Installing clipboard dependencies..."
-sudo apt update
-sudo apt install -y wl-clipboard xclip
+# Check for system dependencies
+print_status "Checking system dependencies..."
 
-# Install the binary
-echo "📁 Installing binary to /usr/local/bin/..."
-sudo cp target/release/keytui-gui /usr/local/bin/
-sudo chmod +x /usr/local/bin/keytui-gui
+# Check for clipboard tools
+if command -v xclip &> /dev/null; then
+    print_success "xclip found (X11 clipboard support)"
+elif command -v wl-copy &> /dev/null; then
+    print_success "wl-copy found (Wayland clipboard support)"
+else
+    print_warning "No clipboard tool found. Installing xclip..."
+    sudo apt update
+    sudo apt install -y xclip
+    print_success "xclip installed"
+fi
 
-# Create desktop entry
-echo "🖥️  Creating desktop entry..."
-mkdir -p ~/.local/share/applications
-cat > ~/.local/share/applications/keytui-gui.desktop << EOF
-[Desktop Entry]
-Name=Keytui GUI
-Comment=Lightweight desktop password manager
-Exec=keytui-gui
-Icon=preferences-desktop-user-password
-Terminal=false
-Type=Application
-Categories=Utility;Security;
-Keywords=password;manager;security;clipboard;
+# Build the application
+print_status "Building Passman..."
+cd "$PROJECT_DIR"
+
+# Clean previous builds
+cargo clean 2>/dev/null || true
+
+# Build the TUI version
+print_status "Building TUI version..."
+cargo build --bin keytui-tui --release
+
+# Build the CLI version
+print_status "Building CLI version..."
+cargo build --bin passman --release
+
+print_success "Build completed successfully"
+
+# Create the wrapper script
+print_status "Creating wrapper script..."
+cat > passman-wrapper.sh << 'EOF'
+#!/bin/bash
+# Passman wrapper script - launches the TUI interface
+exec "/home/$(whoami)/workspace/cortex/projects/passman/target/release/keytui-tui"
 EOF
 
-# Create autostart entry (optional)
-echo "🔄 Creating autostart entry (optional)..."
-mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/keytui-gui.desktop << EOF
-[Desktop Entry]
-Name=Keytui GUI Daemon
-Comment=Keytui GUI background daemon
-Exec=keytui-gui --daemon
-Icon=preferences-desktop-user-password
-Terminal=false
-Type=Application
-Hidden=false
-X-GNOME-Autostart-enabled=true
-EOF
+# Update the wrapper script with the correct path
+sed -i "s|/home/\$(whoami)/workspace/cortex/projects/passman|$PROJECT_DIR|g" passman-wrapper.sh
 
-echo "✅ Installation completed successfully!"
+chmod +x passman-wrapper.sh
+print_success "Wrapper script created"
+
+# Install system-wide
+print_status "Installing system-wide..."
+
+# Copy to /usr/local/bin
+sudo cp passman-wrapper.sh /usr/local/bin/passman
+sudo chmod +x /usr/local/bin/passman
+
+# Create symlink in user bin for PATH priority
+mkdir -p ~/.local/bin
+ln -sf /usr/local/bin/passman ~/.local/bin/passman
+
+print_success "Installed to /usr/local/bin/passman"
+print_success "Created symlink in ~/.local/bin/passman"
+
+# Test the installation
+print_status "Testing installation..."
+if command -v passman &> /dev/null; then
+    print_success "Passman command is available"
+else
+    print_error "Passman command not found in PATH"
+    print_warning "You may need to restart your terminal or run: source ~/.bashrc"
+fi
+
+# Create .passman directory
+mkdir -p ~/.passman
+print_success "Created ~/.passman directory"
+
+# Test clipboard functionality
+print_status "Testing clipboard functionality..."
+if echo "test" | xclip -selection clipboard 2>/dev/null && xclip -selection clipboard -o 2>/dev/null | grep -q "test"; then
+    print_success "Clipboard functionality working"
+else
+    print_warning "Clipboard test failed - you may need to install xclip or wl-clipboard"
+fi
+
 echo ""
-echo "🎯 Next steps:"
-echo "   1. Set up global shortcut:"
-echo "      - Open Ubuntu Settings → Keyboard → Custom Shortcut"
-echo "      - Add new shortcut:"
-echo "        • Name: Keytui GUI"
-echo "        • Command: keytui-gui"
-echo "        • Shortcut: Ctrl + Alt + P"
+print_success "🎉 Installation completed successfully!"
 echo ""
-echo "   2. Test the application:"
-echo "      - Run: keytui-gui"
-echo "      - Or use the global shortcut once configured"
+echo "📖 Usage:"
+echo "  passman          # Launch the TUI interface"
+echo "  passman add gmail # Add a new password (CLI mode)"
+echo "  passman list     # List all passwords (CLI mode)"
 echo ""
-echo "   3. Optional: Enable autostart daemon"
-echo "      - The daemon will start automatically on login"
-echo "      - Disable by removing ~/.config/autostart/keytui-gui.desktop"
+echo "📚 Documentation:"
+echo "  README.md        # Project overview"
+echo "  SETUP_GUIDE.md   # Detailed setup instructions"
 echo ""
-echo "🎉 Keytui GUI is ready to use!"
+echo "🔧 Troubleshooting:"
+echo "  If 'passman' command not found, restart your terminal"
+echo "  If clipboard doesn't work, install: sudo apt install xclip"
+echo ""
+print_success "Happy password managing! 🔐"
