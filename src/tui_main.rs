@@ -71,35 +71,56 @@ impl App {
     }
 
     fn load_entries(&mut self) -> Result<()> {
-        // Load entries from vault.json file
-        if std::path::Path::new("vault.json").exists() {
-            let vault_content = std::fs::read_to_string("vault.json")?;
+        // Load entries from vault file in user's home directory
+        let vault_path = self.get_vault_path()?;
+        
+        if vault_path.exists() {
+            let vault_content = std::fs::read_to_string(&vault_path)?;
             
             // Parse as array format (new simplified format)
             if let Ok(entries) = serde_json::from_str::<Vec<PasswordEntry>>(&vault_content) {
                 self.entries = entries;
-                println!("[TUI] Loaded {} entries from vault.json", self.entries.len());
+                println!("[TUI] Loaded {} entries from {:?}", self.entries.len(), vault_path);
             } else {
-                println!("[TUI] Could not parse vault.json, starting with empty vault");
+                println!("[TUI] Could not parse vault file, starting with empty vault");
                 self.entries = Vec::new();
             }
         } else {
             // Create empty vault if it doesn't exist
             self.entries = Vec::new();
-            println!("[TUI] No vault.json found, starting with empty vault");
+            println!("[TUI] No vault file found at {:?}, starting with empty vault", vault_path);
         }
         Ok(())
     }
 
     fn save_entries(&self) {
-        // Save entries to vault.json file
-        if let Ok(entries_json) = serde_json::to_string_pretty(&self.entries) {
-            if let Err(e) = std::fs::write("vault.json", entries_json) {
-                eprintln!("Error saving entries: {}", e);
-            } else {
-                println!("[TUI] Saved {} entries to vault.json", self.entries.len());
+        // Save entries to vault file in user's home directory
+        if let Ok(vault_path) = self.get_vault_path() {
+            if let Ok(entries_json) = serde_json::to_string_pretty(&self.entries) {
+                if let Err(e) = std::fs::write(&vault_path, entries_json) {
+                    eprintln!("Error saving entries to {:?}: {}", vault_path, e);
+                } else {
+                    println!("[TUI] Saved {} entries to {:?}", self.entries.len(), vault_path);
+                }
             }
+        } else {
+            eprintln!("Error getting vault path for saving");
         }
+    }
+
+    fn get_vault_path(&self) -> Result<std::path::PathBuf> {
+        // Get user's home directory
+        let home_dir = dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        
+        // Create .passman directory if it doesn't exist
+        let passman_dir = home_dir.join(".passman");
+        if !passman_dir.exists() {
+            std::fs::create_dir_all(&passman_dir)?;
+        }
+        
+        // Return path to vault.json in .passman directory
+        Ok(passman_dir.join("vault.json"))
     }
 
     fn filter_entries(&mut self) {
