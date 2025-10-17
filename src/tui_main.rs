@@ -152,12 +152,46 @@ impl App {
 
     fn copy_password(&mut self) {
         if let Some(entry) = self.get_selected_entry() {
-            // In a real implementation, this would copy to clipboard
-            self.status_message = format!("Password for '{}' copied to clipboard", entry.name);
+            // Copy password to clipboard
+            if let Err(e) = self.copy_to_clipboard(&entry.password) {
+                self.status_message = format!("Error copying to clipboard: {}", e);
+            } else {
+                self.status_message = format!("Password for '{}' copied to clipboard", entry.name);
+            }
             self.status_timer = Some(Instant::now() + Duration::from_secs(1));
             // Auto-quit after copying password
             self.should_quit = true;
         }
+    }
+
+    fn copy_to_clipboard(&self, text: &str) -> Result<()> {
+        // Try to copy to clipboard using system commands
+        if self.try_wayland_copy(text) || self.try_x11_copy(text) {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Failed to copy to clipboard"))
+        }
+    }
+
+    fn try_wayland_copy(&self, text: &str) -> bool {
+        std::process::Command::new("wl-copy")
+            .arg(text)
+            .output()
+            .is_ok()
+    }
+
+    fn try_x11_copy(&self, text: &str) -> bool {
+        std::process::Command::new("xclip")
+            .args(&["-selection", "clipboard"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .and_then(|mut child| {
+                use std::io::Write;
+                child.stdin.as_mut().unwrap().write_all(text.as_bytes())?;
+                child.wait()?;
+                Ok(())
+            })
+            .is_ok()
     }
 
     fn add_entry(&mut self) {
