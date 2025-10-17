@@ -22,7 +22,7 @@ A lightweight, secure terminal-based password manager with an atuin-style interf
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/passman.git
+git clone https://github.com/stajuddinsha/passman.git
 cd passman
 ```
 

@@ -22,7 +22,7 @@ A lightweight, secure terminal-based password manager with an atuin-style interf
 
 ```bash
 # Clone and build
-git clone https://github.com/yourusername/passman.git
+git clone https://github.com/stajuddinsha/passman.git
 cd passman
 cargo build --bin keytui-tui --release
 
@@ -177,8 +177,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/passman/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/passman/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/stajuddinsha/passman/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/stajuddinsha/passman/discussions)
 - 📖 **Documentation**: [Setup Guide](SETUP_GUIDE.md)
 
 ---
@@ -187,6 +187,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ and Rust**
 
-[⭐ Star this repo](https://github.com/yourusername/passman) • [🐛 Report Bug](https://github.com/yourusername/passman/issues) • [💡 Request Feature](https://github.com/yourusername/passman/discussions)
+[⭐ Star this repo](https://github.com/stajuddinsha/passman) • [🐛 Report Bug](https://github.com/stajuddinsha/passman/issues) • [💡 Request Feature](https://github.com/stajuddinsha/passman/discussions)
 
 </div>
