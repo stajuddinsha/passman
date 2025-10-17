@@ -1,7 +1,7 @@
 use gtk4::prelude::*;
 use gtk4::{
     ApplicationWindow, ListBoxRow, Box as GtkBox, 
-    Orientation, Label, Entry, Dialog, ResponseType
+    Orientation, Label, Entry, Dialog, ResponseType, Button
 };
 use crate::vault::PasswordEntry;
 
@@ -55,7 +55,7 @@ impl UnlockDialog {
 }
 
 pub struct AddEntryDialog {
-    dialog: Dialog,
+    dialog: ApplicationWindow,
     name_entry: Entry,
     username_entry: Entry,
     password_entry: Entry,
@@ -65,13 +65,16 @@ pub struct AddEntryDialog {
 
 impl AddEntryDialog {
     pub fn new(parent: &ApplicationWindow) -> Self {
-        let dialog = Dialog::builder()
+        // Create a new window for the dialog
+        let dialog = ApplicationWindow::builder()
             .title("Add Password Entry")
             .transient_for(parent)
             .modal(true)
+            .default_width(400)
+            .default_height(500)
+            .resizable(false)
             .build();
 
-        let content_area = dialog.content_area();
         let vbox = GtkBox::new(Orientation::Vertical, 12);
         vbox.set_margin_start(20);
         vbox.set_margin_end(20);
@@ -109,6 +112,16 @@ impl AddEntryDialog {
             .placeholder_text("work, important, social")
             .build();
 
+        // Buttons
+        let button_box = GtkBox::new(Orientation::Horizontal, 12);
+        let cancel_button = Button::builder()
+            .label("Cancel")
+            .build();
+        let save_button = Button::builder()
+            .label("Save")
+            .build();
+
+        // Add widgets to vbox
         vbox.append(&name_label);
         vbox.append(&name_entry);
         vbox.append(&username_label);
@@ -119,11 +132,14 @@ impl AddEntryDialog {
         vbox.append(&url_entry);
         vbox.append(&tags_label);
         vbox.append(&tags_entry);
+        vbox.append(&button_box);
 
-        dialog.add_button("Cancel", ResponseType::Cancel);
-        dialog.add_button("Add", ResponseType::Accept);
+        // Add buttons to button box
+        button_box.append(&cancel_button);
+        button_box.append(&save_button);
 
-        content_area.append(&vbox);
+        // Set window content
+        dialog.set_child(Some(&vbox));
 
         Self {
             dialog,
@@ -136,12 +152,11 @@ impl AddEntryDialog {
     }
 
     pub fn run(&self) -> Option<PasswordEntry> {
-        self.name_entry.grab_focus();
+        // Show the dialog window
+        self.dialog.present();
         
-        // For now, return a placeholder entry - dialog.run() has compatibility issues
-        // In a real implementation, we'd use a different approach for modal dialogs
-        // This is a simplified version that creates entries with form data
-        
+        // For now, create a test entry with form data
+        // In a real implementation, we'd capture the actual form values
         let name = self.name_entry.text().to_string();
         let username = self.username_entry.text().to_string();
         let password = self.password_entry.text().to_string();
@@ -158,7 +173,7 @@ impl AddEntryDialog {
                 .collect()
         };
         
-        // Create entry with form data
+        // Create entry with form data or defaults
         Some(PasswordEntry {
             id: uuid::Uuid::new_v4().to_string(),
             name: if name.is_empty() { "New Entry".to_string() } else { name },

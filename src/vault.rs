@@ -23,11 +23,17 @@ pub struct VaultManager {
 
 impl VaultManager {
     pub fn new(config: &Config) -> Result<Self> {
-        Ok(Self {
+        let mut vault = Self {
             config: config.clone(),
             entries: HashMap::new(),
             is_locked: true,
-        })
+        };
+        
+        // For now, unlock the vault automatically
+        // In a real implementation, this would require user authentication
+        vault.unlock("")?;
+        
+        Ok(vault)
     }
 
     pub fn unlock(&mut self, _password: &str) -> Result<()> {
@@ -134,40 +140,54 @@ impl VaultManager {
     }
 
     fn load_entries(&mut self) -> Result<()> {
-        // Create some sample entries for demonstration
-        let sample_entries = vec![
-            PasswordEntry {
-                id: "1".to_string(),
-                name: "Gmail".to_string(),
-                username: Some("user@gmail.com".to_string()),
-                password: "encrypted_password_1".to_string(),
-                url: Some("https://gmail.com".to_string()),
-                tags: vec!["email".to_string(), "google".to_string()],
-                created_at: chrono::Utc::now(),
-                updated_at: chrono::Utc::now(),
-            },
-            PasswordEntry {
-                id: "2".to_string(),
-                name: "GitHub".to_string(),
-                username: Some("developer".to_string()),
-                password: "encrypted_password_2".to_string(),
-                url: Some("https://github.com".to_string()),
-                tags: vec!["development".to_string(), "git".to_string()],
-                created_at: chrono::Utc::now(),
-                updated_at: chrono::Utc::now(),
-            },
-        ];
+        // Try to load from vault.json file
+        let vault_file = std::path::Path::new("vault.json");
+        if vault_file.exists() {
+            println!("[VAULT] Loading entries from vault.json");
+            let contents = std::fs::read_to_string(vault_file)?;
+            let loaded_entries: HashMap<String, PasswordEntry> = serde_json::from_str(&contents)?;
+            self.entries = loaded_entries;
+            println!("[VAULT] Loaded {} entries from vault.json", self.entries.len());
+        } else {
+            println!("[VAULT] No vault.json found, creating sample entries");
+            // Create some sample entries if no vault file exists
+            let sample_entries = vec![
+                PasswordEntry {
+                    id: "1".to_string(),
+                    name: "Gmail".to_string(),
+                    username: Some("user@gmail.com".to_string()),
+                    password: "encrypted_password_1".to_string(),
+                    url: Some("https://gmail.com".to_string()),
+                    tags: vec!["email".to_string(), "google".to_string()],
+                    created_at: chrono::Utc::now(),
+                    updated_at: chrono::Utc::now(),
+                },
+                PasswordEntry {
+                    id: "2".to_string(),
+                    name: "GitHub".to_string(),
+                    username: Some("developer".to_string()),
+                    password: "encrypted_password_2".to_string(),
+                    url: Some("https://github.com".to_string()),
+                    tags: vec!["development".to_string(), "git".to_string()],
+                    created_at: chrono::Utc::now(),
+                    updated_at: chrono::Utc::now(),
+                },
+            ];
 
-        for entry in sample_entries {
-            self.entries.insert(entry.id.clone(), entry);
+            for entry in sample_entries {
+                self.entries.insert(entry.id.clone(), entry);
+            }
         }
 
         Ok(())
     }
 
     fn save_entries(&self) -> Result<()> {
-        // In a real implementation, this would save to encrypted vault
-        println!("Saving {} entries to vault", self.entries.len());
+        // Simple file-based persistence for now
+        let vault_file = std::path::Path::new("vault.json");
+        let entries_json = serde_json::to_string_pretty(&self.entries)?;
+        std::fs::write(vault_file, entries_json)?;
+        println!("[VAULT] Saved {} entries to vault.json", self.entries.len());
         Ok(())
     }
 
@@ -186,5 +206,17 @@ impl VaultManager {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn get_all_entries(&self) -> Result<Vec<PasswordEntry>> {
+        if self.is_locked {
+            return Err(anyhow::anyhow!("Vault is locked"));
+        }
+
+        Ok(self.entries.values().cloned().collect())
+    }
+
+    pub fn get_entries_count(&self) -> usize {
+        self.entries.len()
     }
 }
