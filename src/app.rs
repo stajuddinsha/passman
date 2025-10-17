@@ -1,12 +1,21 @@
+#[cfg(feature = "gui")]
 use anyhow::Result;
+#[cfg(feature = "gui")]
 use gtk4::prelude::*;
+#[cfg(feature = "gui")]
 use gtk4::{ApplicationWindow, SearchEntry, ListBox, Box as GtkBox, Orientation, Label, Button, HeaderBar, Entry};
+#[cfg(feature = "gui")]
 use std::sync::{Arc, Mutex};
+#[cfg(feature = "gui")]
 use crate::vault::{VaultManager, PasswordEntry};
+#[cfg(feature = "gui")]
 use crate::clipboard::ClipboardManager;
+#[cfg(feature = "gui")]
 use crate::config::Config;
+#[cfg(feature = "gui")]
 use crate::ui::{AddEntryDialog, UnlockDialog};
 
+#[cfg(feature = "gui")]
 pub struct KeytuiApp {
     vault_manager: Arc<Mutex<VaultManager>>,
     clipboard_manager: ClipboardManager,

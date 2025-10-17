@@ -1,21 +1,31 @@
+#[cfg(feature = "gui")]
 use anyhow::Result;
+#[cfg(feature = "gui")]
 use gtk4::prelude::*;
+#[cfg(feature = "gui")]
 use gtk4::{Application, ApplicationWindow};
 use std::env;
 
+#[cfg(feature = "gui")]
 mod app;
 mod config;
 mod vault;
 mod clipboard;
+mod search;
+#[cfg(feature = "gui")]
 mod ui;
+#[cfg(feature = "gui")]
 mod minimal_test;
 
+#[cfg(feature = "gui")]
 use app::KeytuiApp;
+#[cfg(feature = "gui")]
 use minimal_test::run_minimal_test;
 
+#[cfg(feature = "gui")]
 fn main() -> Result<()> {
     println!("[MAIN] Starting main function...");
-    
+
     // Check for minimal test mode
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 && args[1] == "--minimal" {
@@ -37,7 +47,7 @@ fn main() -> Result<()> {
     println!("[MAIN] Setting up application activate handler...");
     app.connect_activate(|app| {
         println!("[ACTIVATE] Application activate callback triggered");
-        
+
         println!("[ACTIVATE] Creating KeytuiApp...");
         let keytui_app = match KeytuiApp::new() {
             Ok(app) => {
@@ -65,7 +75,7 @@ fn main() -> Result<()> {
         println!("[ACTIVATE] Setting up UI...");
         keytui_app.setup_ui(&window);
         println!("[ACTIVATE] UI setup completed");
-        
+
         println!("[ACTIVATE] Presenting window...");
         window.present();
         println!("[ACTIVATE] Window presented successfully");
@@ -84,4 +94,9 @@ fn main() -> Result<()> {
 
     println!("[MAIN] Application run completed");
     Ok(())
+}
+
+#[cfg(not(feature = "gui"))]
+fn main() {
+    println!("GUI feature not enabled. Use 'cargo run --bin keytui-tui' for terminal version.");
 }

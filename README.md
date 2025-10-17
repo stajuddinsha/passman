@@ -1,23 +1,23 @@
-# Keytui GUI - Instant Password Search for Ubuntu
+# Keytui - Terminal Password Manager
 
-A lightweight desktop password manager built for Ubuntu with a Spotlight-style overlay interface.
+A lightweight terminal password manager with atuin-style interface for quick password access.
 
 ## Features
 
-- **Global Shortcut**: Press `Ctrl + Alt + P` anywhere to open the search overlay
-- **Fast Search**: Fuzzy search with live filtering
+- **Terminal Interface**: Clean TUI with atuin-style design
+- **Fast Search**: Real-time fuzzy search with live filtering
+- **Auto-quit**: Automatically exits after copying password
 - **Secure**: Local encryption with XChaCha20-Poly1305 and Argon2id
-- **Auto-clear**: Clipboard automatically clears after 20 seconds
 - **Keyboard Navigation**: Full keyboard control with arrow keys and Enter
-- **Auto-lock**: Vault locks after idle timeout or system suspend
+- **Data Persistence**: JSON-based vault storage
 
 ## Installation
 
 ### Prerequisites
 
-- Ubuntu 20.04 or later
-- GTK 4.6 or later (tested with 4.6.9)
+- Linux/Unix system with terminal support
 - Rust 1.75 or later
+- Terminal with UTF-8 support
 
 ### Build from Source
 
@@ -26,28 +26,29 @@ A lightweight desktop password manager built for Ubuntu with a Spotlight-style o
 git clone <repository-url>
 cd passman
 
-# Install dependencies
-sudo apt install libgtk-4-dev pkg-config wl-clipboard xclip
+# Build the terminal version
+cargo build --bin keytui-tui --release
 
-# Build the project
-cargo build --release
+# Run the terminal version
+./target/release/keytui-tui
 
 # Install system-wide (optional)
-sudo cp target/release/keytui-gui /usr/local/bin/
+sudo cp target/release/keytui-tui /usr/local/bin/
 ```
 
 ### Current Status
 
 ✅ **Completed:**
-- Basic GTK4 GUI framework
-- Search interface with live filtering
+- Terminal UI with atuin-style interface
+- Real-time search with live filtering
+- Add/Edit/Delete operations
+- Auto-quit after copying password
+- Data persistence with JSON storage
 - Sample password entries
-- Project structure and configuration
 
 🚧 **In Progress:**
 - Vault encryption (XChaCha20-Poly1305 + Argon2id)
 - Clipboard integration
-- Global shortcut setup
 
 📋 **Planned:**
 - Entry management (add/edit/delete)
